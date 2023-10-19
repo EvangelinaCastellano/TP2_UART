@@ -1,93 +1,94 @@
 `timescale 1ns / 1ps
 
 module tb_baudrate();
+    reg          clk;
+    reg          reset;
+    reg [7 : 0]  din;
+    reg          tx_start;
+    reg [1 : 0]  state_reg;
+    wire         tick;
 
-    reg i_clk;
-    reg i_reset;
-    reg [0 : 3] control_bit;
-    wire tick;
-    wire tx_start_alu_intf_to_tx;
-    wire [7 : 0] tx_alu_intf_to_din_tx;
-    wire rx_done_rx_to_read_done_alu_intf;
-    wire [7 : 0] dout_rx_to_rx_data_alu_intf;
-    wire [7 : 0] data_a_alu_intf_to_alu;
-    wire [7 : 0] data_b_alu_intf_to_alu;
-    wire [5 : 0] opcode_alu_intf_to_alu;
-    wire [7 : 0] data_alu_to_alu_result_alu_intf;
-     
+    wire         data_tx_to_rx_top;
+    wire         data_top_to_rx;
 
-    wire o_tx_done_tick; //Flag para ver en la simulacion
-    wire o_tx;
+    wire         tx_done;
+    wire         rx_done;
+    wire [7 : 0] dout;
 
-    BaudRate_Generator baudrate(.i_clk(i_clk),
-                                .i_reset(i_reset), 
-                                .o_tick(tick));
+    top tb_top(
+        .i_clk(clk),
+        .i_reset(reset),
+        .i_rx(data_tx_to_rx_top),
+        .o_tx(data_top_to_rx)
+        );
 
-    reg i_rx; //Valor de entrada
+    BaudRate_Generator baudrate(
+                        .i_clk(clk),
+                        .i_reset(reset), 
+                        .o_tick(tick)
+                        );
 
-    Tx uart_tx(.i_clk(i_clk), 
-               .i_reset(i_reset), 
-               .i_tx_start(tx_start_alu_intf_to_tx), 
-               .i_s_tick(tick), 
-               .i_din(tx_alu_intf_to_din_tx), 
-               .o_tx_done_tick(o_tx_done_tick), 
-               .o_tx(o_tx));
+    Tx uart_tx(
+            .i_clk(clk), 
+            .i_reset(reset), 
+            .i_tx_start(tx_start), 
+            .i_s_tick(tick), 
+            .i_din(din), 
+            .o_tx_done_tick(tx_done), 
+            .o_tx(data_tx_to_rx_top)
+            );
 
-    Rx uart_rx(.i_clk(i_clk),
-               .i_reset(i_reset),
-               .i_rx(i_rx),
-               .i_s_tick(tick),
-               .o_rx_done_tick(rx_done_rx_to_read_done_alu_intf),
-               .o_dout(dout_rx_to_rx_data_alu_intf));
-
-
-    ALU alu(.i_data_a(data_a_alu_intf_to_alu),
-            .i_data_b(data_b_alu_intf_to_alu),
-            .i_operation(opcode_alu_intf_to_alu),
-            .o_data(data_alu_to_alu_result_alu_intf));
-
-    ALU_interface alu_interface(.i_clk(i_clk),
-                                .i_reset(i_reset),
-                                .i_read_done(rx_done_rx_to_read_done_alu_intf),
-                                .i_rx_data(dout_rx_to_rx_data_alu_intf),
-                                .i_alu_result(data_alu_to_alu_result_alu_intf),
-                                .o_tx_start(tx_start_alu_intf_to_tx),
-                                .o_tx(tx_alu_intf_to_din_tx),
-                                .o_data_a(data_a_alu_intf_to_alu),
-                                .o_data_b(data_b_alu_intf_to_alu),
-                                .o_opcode(opcode_alu_intf_to_alu));
+    Rx uart_rx(
+            .i_clk(clk),
+            .i_reset(reset),
+            .i_rx(data_top_to_rx),
+            .i_s_tick(tick),
+            .o_rx_done_tick(rx_done),
+            .o_dout(dout)
+            );
 
     initial begin
-        i_clk = 1'b0;
-        forever #1 i_clk = ~i_clk;
+        clk = 1'b0;
+        forever #1 clk = ~clk;
     end
 
     initial begin
-        i_reset = 1'b0;
-        #1 i_reset = 1'b1;
-        #3 i_reset = 1'b0;
+        reset = 1'b1;
+        #2 reset = 1'b0;
     end
 
     initial begin
-        #4 i_rx = 1'b1;//data_a
-        control_bit = 4'b0000;
-        #100000000 i_rx = 1'b0;
-        control_bit = 4'b0001;
-        #100000000 i_rx = 1'b1;
-        control_bit = 4'b0010;
-        #100000000 i_rx = 1'b0;
-        control_bit = 4'b0011;
-        #100000000 i_rx = 1'b1;
-        control_bit = 4'b0100;
-        #100000000 i_rx = 1'b0;
-        control_bit = 4'b0101;
-        #100000000 i_rx = 1'b1;
-        control_bit = 4'b0110;
-        #100000000 i_rx = 1'b0;
-        control_bit = 4'b0111;
-        // #100 i_rx = 8'b00000001;//data_b
-        // #100 i_rx = 8'b00100000;//opcode
-        
+        state_reg = 2'b00;
+        #5 din = 8'b00000001;//data a
+        tx_start = 1'b1;
+        #2  tx_start = 1'b0;
+
+    end
+
+    always@(*) begin
+        if(tx_done)begin
+            case (state_reg)
+                2'b00: begin
+                     din <= 8'b00000001;//data b
+                    state_reg <= 2'b01;
+                    #5tx_start <= 1'b1;
+                    #5 tx_start <= 1'b0;
+                end
+                2'b01: begin
+                    #1 din <= 8'b00100000;//opcode
+                    state_reg <= 2'b10;
+                    #5tx_start <= 1'b1;
+                    #5 tx_start <= 1'b0;
+                end
+            endcase
+        end
+        if (rx_done) begin
+            $finish;
+            state_reg <= 2'b00;
+            #5 din = 8'b00000001;//data a
+            tx_start = 1'b1;
+            #2 tx_start = 1'b0;
+        end
     end
 
 endmodule
