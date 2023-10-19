@@ -16,7 +16,7 @@ reg [NB_BaudRate -1 : 0] BaudRate_reg;
 
 always @(posedge i_clk) begin
     if(i_reset || o_tick)
-        BaudRate_reg <= {NB_BaudRate{1'b0}};
+            BaudRate_reg <= {NB_BaudRate{1'b0}};
     else     
         BaudRate_reg <= BaudRate_reg + 1'b1;
 end
