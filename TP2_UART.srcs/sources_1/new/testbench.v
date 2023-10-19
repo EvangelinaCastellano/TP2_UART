@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module tb_baudrate();
+module tb_top();
     reg          clk;
     reg          reset;
     reg [7 : 0]  din;
