@@ -6,11 +6,11 @@ module Tx
     parameter SB_TICK = 16
 )
 (
-    input wire clk, reset,
-    input wire tx_start, s_tick,
-    input wire [7:0] din,
-    output reg tx_done_tick,
-    output wire tx
+    input wire i_clk, i_reset,
+    input wire i_tx_start, i_s_tick,
+    input wire [7:0] i_din,
+    output reg o_tx_done_tick,
+    output wire o_tx
 );
 
 // Estados
@@ -26,9 +26,9 @@ reg [2:0] n_reg, n_next;   // Cantidad de bits recibidos
 reg [7:0] b_reg, b_next;   // Valor recibido
 reg tx_reg, tx_next;
 
-always @(posedge clk, posedge reset) begin
+always @(posedge i_clk, posedge i_reset) begin
 
-    if(reset)
+    if(i_reset)
         begin
             state_reg <= idle;
             s_reg  <= 0;
@@ -50,7 +50,7 @@ end
 always @(*) begin
 
     state_next   = state_reg;
-    tx_done_tick = 1'b0;
+    o_tx_done_tick = 1'b0;
     s_next       = s_reg;
     n_next       = n_reg;
     b_next       = b_reg;
@@ -61,18 +61,18 @@ always @(*) begin
         idle: 
             begin
                 tx_next = 1'b1;
-                if(tx_start)
+                if(i_tx_start)
                 begin
                     state_next = start;
                     s_next = 0;
-                    b_next = din;
+                    b_next = i_din;
                 end
             end
 
         start:
             begin
                 tx_next = 1'b0;
-                if(s_tick)
+                if(i_s_tick)
                     if(s_reg == 15)
                         begin
                             state_next = data;
@@ -86,7 +86,7 @@ always @(*) begin
         data: 
             begin
                 tx_next = b_reg[0];
-                if(s_tick)
+                if(i_s_tick)
                     if(s_reg == 15)
                         begin
                             s_next = 0;
@@ -103,11 +103,11 @@ always @(*) begin
         stop:
             begin
                 tx_next = 1'b1;
-                if(s_tick)
+                if(i_s_tick)
                     if(s_reg == (SB_TICK-1))
                         begin
                             state_next = idle;
-                            tx_done_tick = 1'b1;
+                            o_tx_done_tick = 1'b1;
                         end 
                     else
                         s_next = s_reg + 1;    
@@ -117,6 +117,6 @@ always @(*) begin
 end    
 
 // Output
-assign tx = tx_reg;
+assign o_tx = tx_reg;
 
 endmodule
