@@ -5,6 +5,7 @@ module top(
     input i_reset,
     input i_rx,
     
+    output  [8 - 1 : 0]        o_data, 
     output o_tx
 );
 
@@ -17,6 +18,10 @@ wire [7 : 0] data_a_alu_intf_to_alu;
 wire [7 : 0] data_b_alu_intf_to_alu;
 wire [5 : 0] opcode_alu_intf_to_alu;
 wire [7 : 0] data_alu_to_alu_result_alu_intf;
+
+reg [8 -1 : 0] data_out;               // Contains the result of the operation
+
+assign o_data = data_out;  
 
 BaudRate_Generator baudrate(
                         .i_clk(i_clk),
@@ -57,6 +62,14 @@ ALU_interface alu_interface(.i_clk(i_clk),
                             .o_data_b(data_b_alu_intf_to_alu),
                             .o_opcode(opcode_alu_intf_to_alu));
 
+always @(posedge i_clk) begin
+    if (i_reset)              
+        data_out <= {8 {1'b0}}; // Clean reg
+    else if(rx_done_rx_to_read_done_alu_intf)
+        data_out <= dout_rx_to_rx_data_alu_intf; //Saves the data B loaded on the switches
+    else if(tx_start_alu_intf_to_tx)
+        data_out <= data_alu_to_alu_result_alu_intf;
+end
 
 
 endmodule

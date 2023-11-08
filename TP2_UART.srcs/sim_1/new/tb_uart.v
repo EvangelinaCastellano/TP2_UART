@@ -1,6 +1,8 @@
 `timescale 1ns / 1ps
 
-module tb_top();
+
+module tb_uart();
+
     reg          clk;
     reg          reset;
     reg [7 : 0]  din;
