@@ -55,10 +55,10 @@ always @(*) begin
 
     case(state_reg)
         idle:
-            if (~i_rx)
+            if (~i_rx)                  // Cuando recibe un cero (bit de start)
                 begin
                     state_next = start;
-                    s_next     = 0;
+                    s_next     = 0;     // Reinicia el contador de ticks
                 end
 
         start:
@@ -77,9 +77,9 @@ always @(*) begin
                 if (s_reg == 15)    
                     begin
                         s_next = 0;
-                        b_next = {i_rx, b_reg[7:1]};
-                        if (n_reg == (DBIT - 1))
-                            state_next = stop;
+                        b_next = {i_rx, b_reg[7:1]}; // valor que recibe
+                        if (n_reg == (DBIT - 1))     
+                            state_next = stop;       // Cuando recibe los 8 bits
                         else
                             n_next = n_reg + 1;    
                     end   
@@ -91,7 +91,7 @@ always @(*) begin
                 if( s_reg == (SB_TICK -1))
                     begin
                         state_next   = idle;
-                        o_rx_done_tick = 1'b1;
+                        o_rx_done_tick = 1'b1; // Bit de stop
                     end
                 else
                     s_next = s_reg + 1;

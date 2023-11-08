@@ -22,7 +22,7 @@ always @(posedge i_clk) begin
         BaudRate_reg <= BaudRate_reg + 1'b1;
 end
 
-assign o_tick = (BaudRate_reg == BaudRate - 1'b1);
+assign o_tick = (BaudRate_reg == BaudRate - 1'b1); // A los 650 manda un 1
 
 endmodule
 

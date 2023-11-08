@@ -60,24 +60,24 @@ always @(*) begin
         
         idle: 
             begin
-                tx_next = 1'b1;
+                tx_next = 1'b1;         // Transmite un 1 cuando no hay datos a transmitir
                 if(i_tx_start)
                 begin
                     state_next = start;
-                    s_next = 0;
-                    b_next = i_din;
+                    s_next = 0;         // Reinicio contador de ticks
+                    b_next = i_din;     // Se guarda en un reg lo q se va a transmitir (los 8 bits)
                 end
             end
 
         start:
             begin
-                tx_next = 1'b0;
+                tx_next = 1'b0;         // Inicio de la transmición (bit start)
                 if(i_s_tick)
                     if(s_reg == 15)
                         begin
                             state_next = data;
-                            s_next = 0;
-                            n_next = 0;
+                            s_next = 0; // Reinicia contador de ticks
+                            n_next = 0; // Reinicia el contador de bits enviados
                         end 
                     else
                         s_next = s_reg + 1;    
@@ -85,14 +85,14 @@ always @(*) begin
 
         data: 
             begin
-                tx_next = b_reg[0];
+                tx_next = b_reg[0]; // Primer bit a enviar 
                 if(i_s_tick)
                     if(s_reg == 15)
                         begin
                             s_next = 0;
-                            b_next = b_reg >> 1;
-                            if(n_reg == (DBIT -1))
-                                state_next = stop;
+                            b_next = b_reg >> 1;  // Desplaza los bits de salida
+                            if(n_reg == (DBIT -1)) 
+                                state_next = stop; // Cuando envia los 8 bits
                             else   
                                 n_next = n_reg + 1; 
                         end
@@ -102,12 +102,12 @@ always @(*) begin
 
         stop:
             begin
-                tx_next = 1'b1;
+                tx_next = 1'b1;                 // Bit stop
                 if(i_s_tick)
                     if(s_reg == (SB_TICK-1))
                         begin
                             state_next = idle;
-                            o_tx_done_tick = 1'b1;
+                            o_tx_done_tick = 1'b1; // Indica el fin de la transmicion
                         end 
                     else
                         s_next = s_reg + 1;    

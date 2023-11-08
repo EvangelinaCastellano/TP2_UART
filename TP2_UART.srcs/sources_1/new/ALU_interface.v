@@ -7,17 +7,17 @@ module ALU_interface
 )
 (
     input i_clk, i_reset,
-    input i_read_done,
-    input [DATA_SIZE - 1 : 0] i_rx_data,
-    input [DATA_SIZE - 1 : 0] i_alu_result,
+    input i_read_done,                      // Avisa cuando Rx termino de leer un dato
+    input [DATA_SIZE - 1 : 0] i_rx_data,    // Dato recibido por Rx
+    input [DATA_SIZE - 1 : 0] i_alu_result, // Resultado de la ALU
 
-    output o_tx_start,
-    output [DATA_SIZE - 1 : 0] o_tx,
-    output [DATA_SIZE - 1 : 0] o_data_a,
+    output o_tx_start,                      // Inicio de la transmicion
+    output [DATA_SIZE - 1 : 0] o_tx,        // Dato a transmitir
+    output [DATA_SIZE - 1 : 0] o_data_a,   
     output [DATA_SIZE - 1 : 0] o_data_b,
     output [OPCODE_SIZE - 1 : 0] o_opcode
 );
-
+    // Estados
     localparam read_a  = 2'b00;
     localparam read_b  = 2'b01;
     localparam read_op = 2'b10;
@@ -32,7 +32,7 @@ module ALU_interface
     reg [OPCODE_SIZE - 1 : 0] opcode_reg, opcode_next;
 
 
-    // States
+    // Estados
         always @(posedge i_clk) begin
         if (i_reset) begin
             state_reg <= read_a;
@@ -53,7 +53,6 @@ module ALU_interface
     end
 
      always @(*) begin
-        // init regs
         state_next  = state_reg;
         result_next = result_reg;
         data_a_next = data_a_reg;
@@ -65,8 +64,8 @@ module ALU_interface
 
             read_a: begin
                 if (i_read_done) begin
-                    data_a_next = i_rx_data;        
-                    state_next = read_b;
+                    data_a_next = i_rx_data; // Escribe el ultimo bit        
+                    state_next = read_b;     // Cambio de estado
                 end
             end
 
@@ -85,9 +84,9 @@ module ALU_interface
             end
 
             result: begin
-                result_next = i_alu_result;
-                tx_next = 1'b1;
-                state_next = read_a;
+                result_next = i_alu_result; // Guarda el resultado de la operacion
+                tx_next = 1'b1;             // Avisa a Tx para transmitir
+                state_next = read_a;        // Resetea al primer estado
             end
 
             default: begin

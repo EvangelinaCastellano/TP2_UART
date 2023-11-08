@@ -5,8 +5,8 @@ module top(
     input i_reset,
     input i_rx,
     
-    output  [8 - 1 : 0]        o_data, 
-    output o_tx
+    output  [8 - 1 : 0]        o_data, // Output leds
+    output o_tx                        // Output tx
 );
 
 wire tick;
@@ -64,10 +64,10 @@ ALU_interface alu_interface(.i_clk(i_clk),
 
 always @(posedge i_clk) begin
     if (i_reset)              
-        data_out <= {8 {1'b0}}; // Clean reg
-    else if(rx_done_rx_to_read_done_alu_intf)
-        data_out <= dout_rx_to_rx_data_alu_intf; //Saves the data B loaded on the switches
-    else if(tx_start_alu_intf_to_tx)
+        data_out <= {8 {1'b0}};                     // Muestra cero en los leds
+    else if(rx_done_rx_to_read_done_alu_intf)       // Cuando recibe un dato los muestra en los leds 
+        data_out <= dout_rx_to_rx_data_alu_intf; 
+    else if(tx_start_alu_intf_to_tx)                // Cuando envia un dato los muestra en los leds
         data_out <= data_alu_to_alu_result_alu_intf;
 end
 
